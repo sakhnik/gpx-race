@@ -2,3 +2,4 @@ jupyterlab
 jupyterlab_vim                                                                                                       
 folium                                                                                                               
 gpxpy 
+ipywidgets
