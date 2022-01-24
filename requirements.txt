@@ -3,3 +3,6 @@ jupyterlab_vim
 folium                                                                                                               
 gpxpy 
 ipywidgets
+pillow
+numpy
+opencv-python
