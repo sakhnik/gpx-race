@@ -6,3 +6,4 @@ ipywidgets
 pillow
 numpy
 opencv-python
+voila

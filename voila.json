@@ -1,0 +1,7 @@
+{
+    "VoilaConfiguration": {
+        "file_whitelist": [
+            ".*\\.(html|js)"
+        ]
+    }
+}
