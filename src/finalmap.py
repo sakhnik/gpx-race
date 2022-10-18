@@ -52,7 +52,10 @@ class FinalMap:
                 dt = (tracks.points[0][0][3] - points[0][3]).total_seconds()
                 add_track(colors[i], points, dt)
 
-            TimestampedGeoJson(data, period='PT5S', transition_time=50) \
+            TimestampedGeoJson(data,
+                               period='PT5S',
+                               transition_time=50,
+                               duration='PT1M') \
                 .add_to(self.m)
             folium.LayerControl().add_to(self.m)
 
