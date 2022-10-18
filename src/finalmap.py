@@ -39,10 +39,15 @@ class FinalMap:
                 },
                 'properties': {
                     'times': [(p[3].timestamp() + dt) * 1000 for p in points],
+                    'icon': 'circle',
+                    'popup': 'Player',
                     'style': {
                         'color': color,
                         'opacity': 0.5,
                     },
+                    'iconStyle': {
+                        'color': color
+                    }
                 }
             }
             data['features'].append(feature)
@@ -53,7 +58,7 @@ class FinalMap:
                 add_track(colors[i], points, dt)
 
             TimestampedGeoJson(data,
-                               period='PT5S',
+                               period='PT1S',
                                transition_time=50,
                                duration='PT1M') \
                 .add_to(self.m)
