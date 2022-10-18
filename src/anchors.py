@@ -7,11 +7,30 @@ import base64
 
 
 class Anchors:
-    def __init__(self, img_map, tracks):
+    def __init__(self, img_map, tracks, storage):
         self.img_map = img_map
-        self.image_markers = self.create_markers(tracks,
+        self.storage = storage
+
+        self.image_data = img_map.get_data()
+        self.corners = {"topleft": tracks.topleft, "botright": tracks.botright}
+        anchors = storage.load_anchors(self.image_data)
+        if anchors:
+            self.corners = anchors["corners"]
+        else:
+            locations = []
+            for lat in (tracks.topleft[0], tracks.botright[0]):
+                for long in (tracks.topleft[1], tracks.botright[1]):
+                    locations.append([lat, long])
+            anchors = {
+                "image": locations,
+                "map": locations,
+                "corners": self.corners
+            }
+            storage.save_anchors(self.image_data, anchors)
+
+        self.image_markers = self.create_markers(anchors["image"],
                                                  self.create_image_icon())
-        self.map_markers = self.create_markers(tracks,
+        self.map_markers = self.create_markers(anchors["map"],
                                                self.create_map_icon())
 
         self.m = ipl.Map(center=tracks.center, zoom=13)
@@ -20,11 +39,13 @@ class Anchors:
         layers_control = ipl.LayersControl(position='topright')
         self.m.add_control(layers_control)
 
+        corners = (self.corners["topleft"], self.corners["botright"])
+
         # Aligned image
         aligned_image = ipl.ImageOverlay(
             name='aligned',
             url=self.get_aligned_url(),
-            bounds=(tracks.topleft, tracks.botright),
+            bounds=corners,
         )
         self.m.add_layer(aligned_image)
 
@@ -36,8 +57,8 @@ class Anchors:
         # Image layer
         lg1 = ipl.LayerGroup(name='Image markers')
         image = ipl.ImageOverlay(
-            url=img_map.get_data(),
-            bounds=(tracks.topleft, tracks.botright),
+            url=self.image_data,
+            bounds=corners,
         )
         lg1.add_layer(image)
 
@@ -63,6 +84,11 @@ class Anchors:
             lg2.add_layer(m)
         self.m.add_layer(lg2)
 
+    def get_bounds(self):
+        tl = self.corners["topleft"]
+        br = self.corners["botright"]
+        return tl, br
+
     def create_image_icon(self):
         return ipl.AwesomeIcon(name='thumbtack', marker_color='red',
                                icon_color='black', spin=False)
@@ -71,12 +97,11 @@ class Anchors:
         return ipl.AwesomeIcon(name='bullseye', marker_color='blue',
                                icon_color='black', spin=False)
 
-    def create_markers(self, tracks, marker_icon):
+    def create_markers(self, locations, marker_icon):
         markers = []
-        for lat in (tracks.topleft[0], tracks.botright[0]):
-            for long in (tracks.topleft[1], tracks.botright[1]):
-                mark = ipl.Marker(location=(lat, long), icon=marker_icon)
-                markers.append(mark)
+        for loc in locations:
+            mark = ipl.Marker(location=(loc[0], loc[1]), icon=marker_icon)
+            markers.append(mark)
         return markers
 
     def create_opacity_control(self, description, image_widget):
@@ -87,10 +112,24 @@ class Anchors:
                                             position='topright')
         self.m.add_control(opacity_control)
 
+    def get_xy(self, lat, lon):
+        w, h = self.img_map.get_width_height()
+        tl, br = self.get_bounds()
+        x = w * (lon - tl[1]) / (br[1] - tl[1])
+        y = h * (br[0] - lat) / (br[0] - tl[0])
+        return x, y
+
     def _get_aligned_image(self):
-        src_points = np.float32([self.img_map.get_xy(*p.location)
+        anchors = {
+            "image": [p.location for p in self.image_markers],
+            "map": [p.location for p in self.map_markers],
+            "corners": self.corners
+        }
+        self.storage.save_anchors(self.image_data, anchors)
+
+        src_points = np.float32([self.get_xy(*p.location)
                                  for p in self.image_markers])
-        dst_points = np.float32([self.img_map.get_xy(*p.location)
+        dst_points = np.float32([self.get_xy(*p.location)
                                  for p in self.map_markers])
         mat = cv2.getPerspectiveTransform(src_points, dst_points)
         img = self.img_map.get_for_cv()

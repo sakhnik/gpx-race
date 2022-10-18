@@ -5,10 +5,12 @@ from finalmap import FinalMap
 from tracks import Tracks
 from imgmap import ImgMap
 from anchors import Anchors
+from storage import Storage
 
 
 class App:
     def __init__(self):
+        self.storage = Storage()
         self.tracks = None
         self.img_map = None
         self.anchors = None
@@ -43,8 +45,8 @@ class App:
         self.redraw_map_out()
 
     def set_image(self, img):
-        self.img_map = ImgMap(img, self.tracks)
-        self.anchors = Anchors(self.img_map, self.tracks)
+        self.img_map = ImgMap(img)
+        self.anchors = Anchors(self.img_map, self.tracks, self.storage)
 
         plot_btn = widgets.Button(description="Plot the map")
         plot_btn.on_click(lambda b: self.redraw_map_out())

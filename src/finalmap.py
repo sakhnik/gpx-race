@@ -15,7 +15,7 @@ class FinalMap:
             img = folium.raster_layers.ImageOverlay(
                 name="Orienteering map",
                 image=anchors.get_aligned_url(),
-                bounds=[tracks.topleft, tracks.botright],
+                bounds=anchors.get_bounds(),
                 opacity=1,
                 interactive=False,
                 cross_origin=False,
