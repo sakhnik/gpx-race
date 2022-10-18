@@ -52,7 +52,8 @@ class FinalMap:
                 dt = (tracks.points[0][0][3] - points[0][3]).total_seconds()
                 add_track(colors[i], points, dt)
 
-            TimestampedGeoJson(data, period='PT5S', transition_time=50).add_to(self.m)
+            TimestampedGeoJson(data, period='PT5S', transition_time=50) \
+                .add_to(self.m)
             folium.LayerControl().add_to(self.m)
 
         # Mark the pictures on the map
@@ -72,12 +73,14 @@ class FinalMap:
             pic_f = Image.open(io.BytesIO(pic))
             width, height = pic_f.size
             encoded = base64.b64encode(pic)
-            jpg = """<object data="data:image/jpg;base64,{}" width="{}" height="{}
-                        type="image/jpg">
-                     </object>""".format
+            jpg = """
+                <object data="data:image/jpg;base64,{}" width="{}" height="{}
+                    type="image/jpg">
+                </object>""".format
             iframe = folium.IFrame(jpg(encoded.decode('UTF-8'), width, height),
                                    width=width*1.1, height=height*1.1)
             popup = folium.Popup(iframe, parse_html=True, max_width=1500)
-            folium.Marker(coords,
-                          icon=folium.Icon(color='red', icon='image', prefix='fa'),
-                          popup=popup).add_to(self.m)
+            folium.Marker(
+                coords,
+                icon=folium.Icon(color='red', icon='image', prefix='fa'),
+                popup=popup).add_to(self.m)
