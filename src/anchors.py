@@ -12,21 +12,12 @@ class Anchors:
         self.storage = storage
 
         self.image_data = img_map.get_data()
-        self.corners = {"topleft": tracks.topleft, "botright": tracks.botright}
+        # Load the previous anchor points if possible, or calculate from tracks
         anchors = storage.load_anchors(self.image_data)
-        if anchors:
-            self.corners = anchors["corners"]
-        else:
-            locations = []
-            for lat in (tracks.topleft[0], tracks.botright[0]):
-                for long in (tracks.topleft[1], tracks.botright[1]):
-                    locations.append([lat, long])
-            anchors = {
-                "image": locations,
-                "map": locations,
-                "corners": self.corners
-            }
+        if not anchors:
+            anchors = self._get_default_anchors(tracks)
             storage.save_anchors(self.image_data, anchors)
+        self.corners = anchors["corners"]
 
         self.image_markers = self.create_markers(anchors["image"],
                                                  self.create_image_icon())
@@ -39,13 +30,11 @@ class Anchors:
         layers_control = ipl.LayersControl(position='topright')
         self.m.add_control(layers_control)
 
-        corners = (self.corners["topleft"], self.corners["botright"])
-
         # Aligned image
         aligned_image = ipl.ImageOverlay(
             name='aligned',
             url=self.get_aligned_url(),
-            bounds=corners,
+            bounds=self.get_bounds(),
         )
         self.m.add_layer(aligned_image)
 
@@ -58,7 +47,7 @@ class Anchors:
         lg1 = ipl.LayerGroup(name='Image markers')
         image = ipl.ImageOverlay(
             url=self.image_data,
-            bounds=corners,
+            bounds=self.get_bounds(),
         )
         lg1.add_layer(image)
 
@@ -83,6 +72,19 @@ class Anchors:
         for m in self.map_markers:
             lg2.add_layer(m)
         self.m.add_layer(lg2)
+
+    def _get_default_anchors(self, tracks):
+        locations = []
+        for lat in (tracks.topleft[0], tracks.botright[0]):
+            for long in (tracks.topleft[1], tracks.botright[1]):
+                locations.append([lat, long])
+        anchors = {
+            "image": locations,
+            "map": locations,
+            "corners": {"topleft": tracks.topleft,
+                        "botright": tracks.botright}
+        }
+        return anchors
 
     def get_bounds(self):
         tl = self.corners["topleft"]
@@ -120,6 +122,7 @@ class Anchors:
         return x, y
 
     def _get_aligned_image(self):
+        # Store the current anchors positions to the DB
         anchors = {
             "image": [p.location for p in self.image_markers],
             "map": [p.location for p in self.map_markers],
@@ -127,6 +130,7 @@ class Anchors:
         }
         self.storage.save_anchors(self.image_data, anchors)
 
+        # Apply the transformation
         src_points = np.float32([self.get_xy(*p.location)
                                  for p in self.image_markers])
         dst_points = np.float32([self.get_xy(*p.location)
