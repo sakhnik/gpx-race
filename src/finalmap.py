@@ -30,7 +30,7 @@ class FinalMap:
             "features": []
         }
 
-        def add_track(color, points, dt):
+        def add_track(name, color, points, dt):
             feature = {
                 'type': 'Feature',
                 'geometry': {
@@ -40,7 +40,7 @@ class FinalMap:
                 'properties': {
                     'times': [(p[3].timestamp() + dt) * 1000 for p in points],
                     'icon': 'circle',
-                    'popup': 'Player',
+                    'popup': name,
                     'style': {
                         'color': color,
                         'opacity': 0.5,
@@ -55,7 +55,7 @@ class FinalMap:
         if tracks:
             for i, points in enumerate(tracks.points):
                 dt = (tracks.points[0][0][3] - points[0][3]).total_seconds()
-                add_track(colors[i], points, dt)
+                add_track(tracks.names[i], colors[i], points, dt)
 
             TimestampedGeoJson(data,
                                period='PT1S',

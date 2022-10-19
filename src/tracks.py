@@ -1,10 +1,14 @@
 import gpxpy
 from itertools import chain, tee
+import re
 
 
 class Tracks:
     def __init__(self, files):
-        self.points = [self.get_data(f) for f in files]
+        def drop_ext(fname):
+            return re.sub(r"\.gpx$", "", fname, re.IGNORECASE)
+        self.names = [drop_ext(f['metadata']['name']) for f in files]
+        self.points = [self.get_data(f['content']) for f in files]
         self.center = None
         self.topleft = None
         self.botright = None
