@@ -4,12 +4,15 @@ import exif
 from PIL import Image
 import io
 import base64
+import pandas as pd
 
 
 class FinalMap:
+
     def __init__(self, tracks, anchors, pictures):
         location = tracks.center if tracks else None
         self.m = folium.Map(location=location, zoom_start=14)
+        self.colors = ['red', 'blue', 'green', 'brown', 'darkcyan']
 
         if anchors:
             img = folium.raster_layers.ImageOverlay(
@@ -22,8 +25,6 @@ class FinalMap:
                 zindex=1,
             )
             img.add_to(self.m)
-
-        colors = ['red', 'blue', 'green', 'brown', 'darkcyan']
 
         data = {
             "type": "FeatureCollection",
@@ -55,7 +56,7 @@ class FinalMap:
         if tracks:
             for i, points in enumerate(tracks.points):
                 dt = (tracks.points[0][0][3] - points[0][3]).total_seconds()
-                add_track(tracks.names[i], colors[i], points, dt)
+                add_track(tracks.names[i], self.colors[i], points, dt)
 
             TimestampedGeoJson(data,
                                period='PT1S',
@@ -63,6 +64,7 @@ class FinalMap:
                                duration='PT1M') \
                 .add_to(self.m)
             folium.LayerControl().add_to(self.m)
+            self.create_result_table(tracks)
 
         # Mark the pictures on the map
         def get_pic_coords(pic_bytes):
@@ -92,3 +94,27 @@ class FinalMap:
                 coords,
                 icon=folium.Icon(color='red', icon='image', prefix='fa'),
                 popup=popup).add_to(self.m)
+
+    def create_result_table(self, tracks):
+        if not tracks:
+            return
+
+        results = {
+            "#": [i + 1 for i, _ in enumerate(tracks.results)],
+            "Runner": [tracks.names[idx] for idx, _ in tracks.results],
+            "Color": [self.colors[idx] for idx, _ in tracks.results],
+            "Time": [f"{time}" for _, time in tracks.results]
+        }
+        dat = pd.DataFrame(results)
+        dat = dat.style.applymap(lambda c: f"background-color: {c};",
+                                 subset="Color")
+        dat = dat.set_table_attributes('class="table table-striped table-hover table-condensed table-responsive"')
+        html = dat.to_html()
+
+        pos = tracks.points[0][0]
+        # iframe = folium.IFrame(html, width=640, height=480)
+        popup = folium.Popup(html)
+        folium.Marker(
+            (pos[0], pos[1]),
+            icon=folium.Icon(color='gray', icon='flag-checkered', prefix='fa'),
+            popup=popup).add_to(self.m)

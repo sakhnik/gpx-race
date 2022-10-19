@@ -10,9 +10,8 @@ class Tracks:
         self.names = [drop_ext(f['metadata']['name']) for f in files]
         self.points = [self.get_data(f['content']) for f in files]
         self.center = None
-        self.topleft = None
-        self.botright = None
-        self.calc_extents()
+        self.topleft, self.botright = self.calc_extents()
+        self.results = self.calc_results()
 
     def get_data(self, file):
         points = []
@@ -32,5 +31,12 @@ class Tracks:
         height = botright[1] - topleft[1]
         self.center = (topleft[0] + 0.5 * width, topleft[1] + 0.5 * height)
         margin = (width * 0.1, height * 0.1)
-        self.topleft = (topleft[0] - margin[0], topleft[1] - margin[1])
-        self.botright = (botright[0] + margin[0], botright[1] + margin[1])
+        topleft = (topleft[0] - margin[0], topleft[1] - margin[1])
+        botright = (botright[0] + margin[0], botright[1] + margin[1])
+        return topleft, botright
+
+    def calc_results(self):
+        results = [(i, (p[-1][3] - p[0][3]))
+                   for i, p in enumerate(self.points)]
+        results.sort(key=lambda x: x[1])
+        return results
