@@ -12,7 +12,8 @@ class FinalMap:
     def __init__(self, tracks, anchors, pictures):
         location = tracks.center if tracks else None
         self.m = folium.Map(location=location, zoom_start=14)
-        self.colors = ['red', 'blue', 'green', 'brown', 'darkcyan']
+        self.colors = ['red', 'blue', 'green', 'cyan', 'magenta', 'brown',
+                       'darkcyan']
 
         if anchors:
             img = folium.raster_layers.ImageOverlay(
@@ -44,7 +45,7 @@ class FinalMap:
                     'popup': name,
                     'style': {
                         'color': color,
-                        'opacity': 0.5,
+                        'opacity': 0.75,
                     },
                     'iconStyle': {
                         'color': color
