@@ -100,19 +100,20 @@ class FinalMap:
             return
 
         results = {
-            "#": [i + 1 for i, _ in enumerate(tracks.results)],
             "Runner": [tracks.names[idx] for idx, _ in tracks.results],
             "Color": [self.colors[idx] for idx, _ in tracks.results],
             "Time": [f"{time}" for _, time in tracks.results]
         }
-        dat = pd.DataFrame(results)
-        dat = dat.style.applymap(lambda c: f"background-color: {c};",
-                                 subset="Color")
-        dat = dat.set_table_attributes('class="table table-striped table-hover table-condensed table-responsive"')
+        dat = pd.DataFrame(results,
+                           index=[i + 1 for i, _ in enumerate(tracks.results)])
+        dat = dat.style \
+            .applymap(lambda c: f"background-color: {c};", subset="Color")
+        style = " ".join(f"table{i}" for i in ("", "-striped", "-hover",
+                                               "-condensed", "-responsive"))
+        dat = dat.set_table_attributes(f'class="{style}"')
         html = dat.to_html()
 
         pos = tracks.points[0][0]
-        # iframe = folium.IFrame(html, width=640, height=480)
         popup = folium.Popup(html)
         folium.Marker(
             (pos[0], pos[1]),
